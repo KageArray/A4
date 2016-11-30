@@ -51,6 +51,7 @@ pid_t alloc_process_id() {
     if (process_table[i].pid == -1) {
       memoryset(&process_table[i], 0, sizeof(pcb_t));
       process_table[i].pid = i;
+      process_table[i].process_status = PROCESS_RUNNING;
       break;
     }
   }
@@ -273,5 +274,17 @@ int process_write(int filehandle, const void *buffer, int length) {
     retval = IO_NOT_IMPLEMENTED;
   }
 
+  return retval;
+}
+
+pcb_t process_get_pcd_from_pid(arg1) {
+  int i;
+  pcb_t *retval;
+  for (i = 0; i < PROCESS_MAX_PROCESSES; i++) {
+    if (process_table[i].pid == arg1) {
+      retval = &process_table[i];
+      break;
+    }
+  }
   return retval;
 }

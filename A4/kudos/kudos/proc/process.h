@@ -8,6 +8,10 @@
 
 #define PROCESS_PTABLE_FULL  (-1)
 #define PROCESS_ILLEGAL_JOIN (-2)
+#define PROCESS_SLEEPING (-3)
+#define PROCESS_RUNNING (-4)
+#define PROCESS_DEAD (-5)
+
 
 #define PROCESS_MAX_FILELENGTH (256)
 #define PROCESS_MAX_PROCESSES  (128)
@@ -17,7 +21,9 @@ typedef int pid_t;
 
 typedef struct {
   pid_t pid;
+  int retval;
   char path[256];
+  
 } pcb_t;
 
 /// Initialize process table.

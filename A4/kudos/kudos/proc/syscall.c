@@ -40,9 +40,14 @@ uintptr_t syscall_entry(uintptr_t syscall,
   case SYSCALL_SPAWN:
     return process_spawn((char*) arg0, (int) arg1);
     break;
+  case SYSCALL_JOIN:
+    
   case SYSCALL_EXIT:
     // TODO: Actually kill off the process instead.
-    thread_sleep_forever();
+    //interrupt her?
+    pid_t proc = process_get_current_process();
+    proc->retval = arg0;
+    thread_sleep_forever(); //remove this eventually
     break;
   default:
     kprintf("SYSCALL %x\n", syscall);
