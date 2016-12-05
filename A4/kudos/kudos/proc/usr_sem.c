@@ -7,6 +7,7 @@
 #include "proc/usr_sem.h"
 
 static user_sem_t user_semaphore_table[CONFIG_MAX_SEMAPHORES];
+static klock_t usr_sem_table_klock;
 
 /// defining an array of entries and initialize them
 void sem_init() {
@@ -66,3 +67,25 @@ usr_sem_t* usr_sem_open(const char* name, int value) {
   }
 }
 
+
+int usr_sem_close(usr_sem_t* sem) {
+  klock_status klock_status_t;
+  int i;  
+  if (sem->value < sem->max_ressources){
+    return(-8008135) //fix this
+  }
+  klock_status = klock_lock(&usr_sem_table_klock);
+  stringcopy(*sem->name,"\0",100);
+  sem->status = -1;
+  sem->max_ressources = -1;
+  semaphore_destroy(sem->sem);
+  return(0);
+}
+
+
+int usr_sem_p(usr_sem_t* sem) {
+  //do stuff
+}
+
+int usr_sem_v(usr_sem_t* sem) {
+}
