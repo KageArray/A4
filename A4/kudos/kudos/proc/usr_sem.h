@@ -1,5 +1,7 @@
 //Userland semaphores
 
+#include "kernel/semaphore.h"
+
 typedef struct {
 
   int status;
