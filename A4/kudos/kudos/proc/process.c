@@ -20,6 +20,9 @@
 #include "kernel/assert.h"      // KERNEL_ASSERT
 #include "proc/syscall.h"       // FD_*, IO_*
 
+
+int join_sleep_resource;
+
 extern void process_set_pagetable(pagetable_t*);
 
 pcb_t process_table[PROCESS_MAX_PROCESSES];
@@ -29,6 +32,7 @@ void process_reset(const pid_t pid) {
   pcb_t *process = &process_table[pid];
 
   process->pid = -1;
+  klock_init(process->lock); 
 }
 
 /// Initialize process table and locks.
@@ -277,9 +281,9 @@ int process_write(int filehandle, const void *buffer, int length) {
   return retval;
 }
 
-pcb_t process_get_pcd_from_pid(arg1) {
+pcb_t process_get_pcd_from_pid(int arg1) {
   int i;
-  pcb_t *retval;
+  pcb_t* retval;
   for (i = 0; i < PROCESS_MAX_PROCESSES; i++) {
     if (process_table[i].pid == arg1) {
       retval = &process_table[i];
@@ -287,4 +291,43 @@ pcb_t process_get_pcd_from_pid(arg1) {
     }
   }
   return retval;
+}
+
+int process_join(int pid) {
+  int retval;
+  pcb_t* pcb;
+  klock_t lock;
+  klock_status klock_status;
+
+  pcb = process_get_pcd_from_pid(pid);
+  while (1){ //move all this to own function
+    if (pcb->status==PROCESS_DEAD) {
+      retval = childprocesspcb->retval;
+      break;
+    }
+    else {
+      klock_init(lock);
+      klock_status = klock_lock(&klock);
+      sleepq_add(&pcb->sleep_resource);
+      klock_open(klock_status,&klock);
+      thread_switch();
+    }
+  } //parent should probably handle reaping on their own, but we do it here
+  pcb->status = -1 //don't use magic constants, please read the style guide
+  return(retval); 
+}
+
+void process_exit(int exit_code){
+  klock_status klock_status;
+  thread_table_t* thr = thread_get_current_thread_entry();
+  klock_status = klock_lock(&process_table_lock);
+  //superfluous?
+  pcb_t proc = process_get_pcd_from_pid(process_get_current_process());
+  proc->retval = exit_code;
+  proc->status = PROCESS_DEAD;
+  klock_open(klock_status,&process_table_lock);//this tep is important
+  sleepq_wake(&proc->sleep_resource);
+  vm_destroy_pagetable(thr->pagetable);
+  thr->pagetable = NULL;
+  thread_finish(); 
 }

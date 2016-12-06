@@ -21,6 +21,7 @@ typedef int pid_t;
 
 typedef struct {
   pid_t pid;
+  int *sleep_resource;
   int retval;
   char path[256];
   

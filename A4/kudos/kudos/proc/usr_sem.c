@@ -96,9 +96,11 @@ int usr_sem_p(usr_sem_t* sem) {
   klock_status klock_status;
   klock_status = klock_lock(&sem->klock);
   if (sem->status = 0) { //if no ressource is avaiable
+    klock_open(klock_status,&sem->klock);
     return(-80085);
   }
   sem->status--;
+  klock_open(klock_status,&sem->klock);
   return(0);
 }
 

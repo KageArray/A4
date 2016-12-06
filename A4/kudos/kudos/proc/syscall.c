@@ -8,7 +8,7 @@
 #include "kernel/assert.h"
 #include "vm/memory.h"
 #include "proc/process.h"
-
+#include "proc/usr_sem.h"
 /// Handle system calls. Interrupts are enabled when this function is
 /// called.
 uintptr_t syscall_entry(uintptr_t syscall,
@@ -38,17 +38,27 @@ uintptr_t syscall_entry(uintptr_t syscall,
     retval = process_write(arg0, (const void*)arg1, arg2);
     break;
   case SYSCALL_SPAWN:
-    return process_spawn((char*) arg0, (int) arg1);
+    return process_spawn((char*) arg0, (int) arg1); //why does this return here?
     break;
   case SYSCALL_JOIN:
-    
+    retval = process_join(arg0);
+    break;
   case SYSCALL_EXIT:
     // TODO: Actually kill off the process instead.
     //interrupt her?
-    pid_t proc = process_get_current_process();
-    proc->retval = arg0;
-    thread_sleep_forever(); //remove this eventually
+    process_exit(arg0);
     break;
+  case SYSCALL_SEM_P:
+    retval = usr_sem_p(arg0);
+    break;
+  case SYSCALL_SEM_V:
+    retval = usr_sem_v(arg0);
+    break;
+  case SYSCALL_SEM_OPEN:
+    retval = usr_sem_open(arg0,arg1);
+    break;
+  case SYCALL_SEM_CLOSE:
+    retval = usr_sem_close(arg0);    
   default:
     kprintf("SYSCALL %x\n", syscall);
     KERNEL_PANIC("Unhandled system call\n");
