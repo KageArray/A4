@@ -11,9 +11,7 @@
 #include "proc/usr_sem.h"
 /// Handle system calls. Interrupts are enabled when this function is
 /// called.
-uintptr_t syscall_entry(uintptr_t syscall,
-                        uintptr_t arg0, uintptr_t arg1, uintptr_t arg2)
-{
+uintptr_t syscall_entry(uintptr_t syscall, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2){
   uintptr_t retval = 0;
 
   // arg0, arg1, and arg2 are unused (for now). Remove this when they do get
@@ -57,7 +55,7 @@ uintptr_t syscall_entry(uintptr_t syscall,
   case SYSCALL_SEM_OPEN:
     retval = usr_sem_open(arg0,arg1);
     break;
-  case SYCALL_SEM_CLOSE:
+  case SYSCALL_SEM_CLOSE:
     retval = usr_sem_close(arg0);    
   default:
     kprintf("SYSCALL %x\n", syscall);

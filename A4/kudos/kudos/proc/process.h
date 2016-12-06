@@ -5,6 +5,7 @@
 
 #include "lib/types.h"
 #include "vm/memory.h"
+#include "kernel/klock.h"
 
 #define PROCESS_PTABLE_FULL  (-1)
 #define PROCESS_ILLEGAL_JOIN (-2)
@@ -24,7 +25,8 @@ typedef struct {
   int *sleep_resource;
   int retval;
   char path[256];
-  
+  int status;
+  klock_t klock;
 } pcb_t;
 
 /// Initialize process table.

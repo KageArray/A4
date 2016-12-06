@@ -32,7 +32,7 @@ void process_reset(const pid_t pid) {
   pcb_t *process = &process_table[pid];
 
   process->pid = -1;
-  klock_init(process->lock); 
+  klock_init(&process->klock); 
 }
 
 /// Initialize process table and locks.
@@ -55,7 +55,7 @@ pid_t alloc_process_id() {
     if (process_table[i].pid == -1) {
       memoryset(&process_table[i], 0, sizeof(pcb_t));
       process_table[i].pid = i;
-      process_table[i].process_status = PROCESS_RUNNING;
+      process_table[i].status = PROCESS_RUNNING;
       break;
     }
   }
@@ -281,7 +281,7 @@ int process_write(int filehandle, const void *buffer, int length) {
   return retval;
 }
 
-pcb_t process_get_pcd_from_pid(int arg1) {
+pcb_t* process_get_pcd_from_pid(int arg1) {
   int i;
   pcb_t* retval;
   for (i = 0; i < PROCESS_MAX_PROCESSES; i++) {
@@ -290,39 +290,37 @@ pcb_t process_get_pcd_from_pid(int arg1) {
       break;
     }
   }
-  return retval;
+  return(retval);
 }
 
 int process_join(int pid) {
   int retval;
   pcb_t* pcb;
-  klock_t lock;
-  klock_status klock_status;
+  klock_status_t klock_status;
 
-  pcb = process_get_pcd_from_pid(pid);
+  pcb = (pcb_t*) process_get_pcd_from_pid(pid);
   while (1){ //move all this to own function
     if (pcb->status==PROCESS_DEAD) {
-      retval = childprocesspcb->retval;
+      retval = pcb->retval;
       break;
     }
     else {
-      klock_init(lock);
-      klock_status = klock_lock(&klock);
+      klock_status = klock_lock(&pcb->klock);
       sleepq_add(&pcb->sleep_resource);
-      klock_open(klock_status,&klock);
+      klock_open(klock_status,&pcb->klock);
       thread_switch();
     }
   } //parent should probably handle reaping on their own, but we do it here
-  pcb->status = -1 //don't use magic constants, please read the style guide
+  pcb->status = -1; //don't use magic constants, please read the style guide
   return(retval); 
 }
 
 void process_exit(int exit_code){
-  klock_status klock_status;
+  klock_status_t klock_status;
   thread_table_t* thr = thread_get_current_thread_entry();
   klock_status = klock_lock(&process_table_lock);
   //superfluous?
-  pcb_t proc = process_get_pcd_from_pid(process_get_current_process());
+  pcb_t* proc = process_get_pcd_from_pid(process_get_current_process());
   proc->retval = exit_code;
   proc->status = PROCESS_DEAD;
   klock_open(klock_status,&process_table_lock);//this tep is important

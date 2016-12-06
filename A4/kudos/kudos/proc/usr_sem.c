@@ -5,8 +5,9 @@
 #include "kernel/assert.h"
 #include "lib/libc.h"
 #include "proc/usr_sem.h"
+#include "kernel/klock.h"
 
-static user_sem_t user_semaphore_table[CONFIG_MAX_SEMAPHORES];
+usr_sem_t user_semaphore_table[CONFIG_MAX_SEMAPHORES];
 static klock_t usr_sem_table_klock;
 
 /// defining an array of entries and initialize them
@@ -14,8 +15,8 @@ void sem_init() {
   int i;
   for (i = 0; i < CONFIG_MAX_SEMAPHORES; ++i) {
     user_semaphore_table[i].status = -1;
-    klock_init(user_semaphore_table[i].klock);
-    stringcopy(user_semaphore_table[i].name,"\0",100);
+    klock_init(&user_semaphore_table[i].klock);
+    stringcopy(&user_semaphore_table[i].name[0],"\0",100);
     user_semaphore_table[i].max_ressources = -1;
   }
 }
@@ -27,12 +28,12 @@ usr_sem_t* usr_sem_open(const char* name, int value) {
   int position = -1;
   int free_position = -1;
 
-  klock_status klock_status;
-  klock_status klock_tbl_status;
+  klock_status_t klock_status;
+  klock_status_t klock_tbl_status;
 
   klock_tbl_status = klock_lock(&usr_sem_table_klock); //check if locked?
   for (i = 0; i < CONFIG_MAX_SEMAPHORES; ++i) {
-    if (stringcmp(name,*user_semaphore_table[i].name) == 0){
+    if (stringcmp(name,&user_semaphore_table[i].name[0]) == 0){
       sem_exists = 1;
       position = i;
       break;
@@ -67,7 +68,8 @@ usr_sem_t* usr_sem_open(const char* name, int value) {
       else {
 	klock_status = klock_lock(&user_semaphore_table[free_position].klock);
 	user_semaphore_table[free_position].status = value;
-	stringcopy(&user_semaphore_table[free_position].name, name, 100);
+	user_semaphore_table[free_position].max_ressources = value;
+	stringcopy(&user_semaphore_table[free_position].name[0], name, 100);
 	klock_open(klock_status,&user_semaphore_table[free_position].klock);
 	klock_open(klock_tbl_status,&usr_sem_table_klock);
 	return(&user_semaphore_table[free_position]);
@@ -78,24 +80,23 @@ usr_sem_t* usr_sem_open(const char* name, int value) {
 
 
 int usr_sem_close(usr_sem_t* sem) {
-  klock_status klock_status_t;
-  int i;  
-  if (sem->value < sem->max_ressources){
-    return(-8008135) //fix this
+  klock_status_t klock_status;  
+  if (sem->status < sem->max_ressources){
+    return(-8008135); //fix this
   }
   klock_status = klock_lock(&sem->klock);
   sem->status = -1;
   sem->max_ressources = -1;
-  stringcopy(*sem->name,"\0",100);
-  klock_open(klock_status,&sem->klock)
+  stringcopy(sem->name,"\0",100);
+  klock_open(klock_status,&sem->klock);
   return(0);
 }
 
 
 int usr_sem_p(usr_sem_t* sem) {
-  klock_status klock_status;
+  klock_status_t klock_status;
   klock_status = klock_lock(&sem->klock);
-  if (sem->status = 0) { //if no ressource is avaiable
+  if (sem->status == 0) { //if no ressource is avaiable
     klock_open(klock_status,&sem->klock);
     return(-80085);
   }
@@ -105,13 +106,13 @@ int usr_sem_p(usr_sem_t* sem) {
 }
 
 int usr_sem_v(usr_sem_t* sem) {
-  klock_status klock_status;
-  klock_status = klock_lock(&sem_klock);
-  if (sem->status = sem->max_ressources) {
+  klock_status_t klock_status;
+  klock_status = klock_lock(&sem->klock);
+  if (sem->status == sem->max_ressources) {
     klock_open(klock_status,&sem->klock);
     return(-8000085);
   }
-  sem->status++
+  sem->status++;
   klock_open(klock_status,&sem->klock);
   return(0);
 }

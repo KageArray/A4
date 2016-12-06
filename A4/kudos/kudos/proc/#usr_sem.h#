@@ -1,0 +1,12 @@
+//Userland semaphores
+
+#include "kernel/semaphore.h"
+
+typedef struct {
+  int max_ressources; //innit?
+  int status; //init
+  char name[100]; //init?
+  klock_t klock; //init 
+
+}usr_sem_t
+ 
