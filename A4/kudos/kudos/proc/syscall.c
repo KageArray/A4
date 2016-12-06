@@ -56,7 +56,8 @@ uintptr_t syscall_entry(uintptr_t syscall, uintptr_t arg0, uintptr_t arg1, uintp
     retval = usr_sem_open(arg0,arg1);
     break;
   case SYSCALL_SEM_CLOSE:
-    retval = usr_sem_close(arg0);    
+    retval = usr_sem_close(arg0);
+    break;
   default:
     kprintf("SYSCALL %x\n", syscall);
     KERNEL_PANIC("Unhandled system call\n");

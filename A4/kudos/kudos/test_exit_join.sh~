@@ -1,0 +1,9 @@
+#! usr/bin/env bash
+
+rm store.file
+cd userland/
+make
+
+./kudos/util/tfstool write store.file userland/join_exit_test join_exit_test
+./kudos/util/tfstool write store.file userland/proc proc
+

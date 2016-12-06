@@ -6,7 +6,6 @@ int main(){
   int retval;
   tid = syscall_spawn("[disk]proc", 0);
   retval = (syscall_join(tid));
-  printf("retval = %d\n",retval);
   if (retval == 80085){
     printf("Test of syscall_join and syscall_exit succeeded\n");
   }
